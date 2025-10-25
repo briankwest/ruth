@@ -1,0 +1,38 @@
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+submission.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Personal message files (but keep the template)
+my_*.txt
+personal_*.txt
