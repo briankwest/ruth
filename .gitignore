@@ -36,3 +36,13 @@ Thumbs.db
 # Personal message files (but keep the template)
 my_*.txt
 personal_*.txt
+
+# Personal configuration (keep only .example files)
+sender.json
+prompt.md
+
+# Generated output
+mailer_output/
+session_*.data
+letter_to_*.json
+letter_to_*.txt

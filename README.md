@@ -1,6 +1,6 @@
 # 📮 AI Letter Writer for Officials
 
-A single-file AI system for generating professional letters to government officials (senators, representatives, governor, state legislators). Analyzes news articles, drafts letters in Brian West's progressive voice, and outputs JSON files for the mailer PDF system.
+A single-file AI system for generating professional letters to government officials (senators, representatives, governor, state legislators). Analyzes news articles, drafts letters in your personalized voice, and outputs JSON files for the mailer PDF system.
 
 ## 🎯 Quick Start
 
@@ -22,17 +22,19 @@ done
 
 ## 📜 System Configuration
 
-**Configured for Brian West** - Progressive Constitutional Democrat from McAlester, OK
+**⚠️ IMPORTANT: Configure sender.json with YOUR information before using!**
 
-The AI drafts letters emphasizing:
-- Constitutional patriotism and democratic values
-- Responsible gun rights with common-sense safety
-- Healthcare as a human right
-- Humane immigration policy
-- Support for social safety nets
-- Civil rights and equality
+The default configuration uses placeholder "John Doe" information. You MUST update `sender.json` with your real information before sending any letters.
 
-To customize for your own voice, edit `prompt.md` (see [PROMPT_SYSTEM.md](PROMPT_SYSTEM.md))
+### Customizing Your Voice
+
+The AI can draft letters emphasizing your personal political perspectives. Example themes:
+- Constitutional values and democratic principles
+- Policy priorities important to you
+- Local and national issues you care about
+- Your preferred communication style
+
+To customize the AI's writing voice, edit `prompt.md` to match your political views and communication style (see [PROMPT_SYSTEM.md](PROMPT_SYSTEM.md))
 
 ## ✨ How It Works
 
@@ -142,22 +144,30 @@ cp .env.example .env
 # Edit .env and add your OpenAI API key
 ```
 
-4. **Configure sender information**
+4. **Configure sender information** (REQUIRED)
 ```bash
-# Edit sender.json with your information:
-# - Name and address for return labels
-# - Contact information
-# Default is Brian West's information
+cp sender.json.example sender.json
+# Edit sender.json with YOUR actual information:
+# - Your name and return address
+# - Your contact information (phone, email)
+# ⚠️  Do not use the example "John Doe" data!
 ```
 
-5. **Configure recipients** (optional)
+5. **Configure AI voice** (optional but recommended)
+```bash
+cp prompt.md.example prompt.md
+# Edit prompt.md to customize the AI's writing style
+# Add your political perspectives and communication preferences
+```
+
+6. **Verify recipients file**
 ```bash
 # The system uses recipients.json for officials
-# Fallback to recipients_export.csv if JSON not found
-# Both files include federal and state officials
+# Includes all federal and state officials for Oklahoma
+# Edit recipients.json to add or modify officials
 ```
 
-6. **Set up editor (optional)**
+7. **Set up editor (optional)**
 ```bash
 ./setup_editor.sh
 ```
@@ -167,11 +177,12 @@ cp .env.example .env
 ```
 markwayne/
 ├── ai_writer.py              # Complete AI letter system (single file)
-├── prompt.md                 # Brian West's voice configuration
+├── prompt.md                 # Your custom voice configuration (create from .example)
 │
-├── sender.json              # Your return address and contact info
+├── sender.json              # Your return address and contact info (create from .example)
+├── sender.json.example      # Template for sender information
+├── prompt.md.example        # Template for custom AI voice
 ├── recipients.json          # Officials database (federal/state)
-├── recipients_export.csv    # CSV fallback (optional)
 │
 ├── complete_workflow.sh     # Demo workflow script
 ├── setup_editor.sh         # Editor configuration
@@ -224,7 +235,7 @@ The system can address letters to three offices:
 
 - **News Analysis**: Extracts key points from multiple articles
 - **Smart Categorization**: Auto-detects topic (Healthcare, Energy, etc.)
-- **Voice Consistency**: Maintains Brian West's progressive perspective
+- **Voice Consistency**: Maintains your configured perspective from prompt.md
 - **Interactive Editing**: Visual editor integration
 - **AI Revisions**: Request specific changes ("make it more urgent", etc.)
 
@@ -240,11 +251,11 @@ The system generates JSON compatible with the mailer PDF system:
     "reference_id": "SEN_MULLIN_HEALTHCARE_20251024_143022"
   },
   "return_address": {
-    "name": "Brian West",
-    "street_1": "714 E Osage Ave",
-    "city": "McAlester",
+    "name": "John Doe",
+    "street_1": "123 Main Street",
+    "city": "Oklahoma City",
     "state": "OK",
-    "zip": "74501-6638"
+    "zip": "73101-0001"
   },
   "recipient_address": {
     "honorific": "The Honorable",
@@ -306,4 +317,4 @@ For issues or questions:
 
 ## 📜 License
 
-This project is configured for Brian West's personal use. Modify `prompt.md` for your own voice and perspectives.
+Open source project. Configure `sender.json` and `prompt.md` for your personal use.

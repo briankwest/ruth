@@ -10,7 +10,6 @@ import os
 import sys
 import time
 import json
-import csv
 import tempfile
 import subprocess
 import platform
@@ -173,21 +172,46 @@ class AILetterDrafter:
         self.system_prompt = self._load_system_prompt()
 
     def _load_system_prompt(self) -> str:
-        """Load custom system prompt from prompt.md if available"""
+        """Load custom system prompt from prompt.md"""
         prompt_file = 'prompt.md'
-        default_prompt = """You are an expert constituent communications specialist who helps citizens write effective letters to their representatives. You write clear, compelling, and action-oriented letters that get results."""
+        example_file = 'prompt.md.example'
 
+        # Default neutral prompt if no custom prompt exists
+        default_prompt = """You are an expert constituent communications specialist who helps citizens write effective letters to their representatives.
+
+Write clear, compelling, and respectful letters that:
+- Express the constituent's views clearly and persuasively
+- Use a professional and courteous tone
+- Include specific requests or calls to action
+- Reference relevant facts and personal experiences when appropriate
+- Maintain a respectful dialogue even when disagreeing
+
+Focus on creating letters that will be taken seriously by elected officials and their staff."""
+
+        # Check if prompt.md exists
+        if not os.path.exists(prompt_file):
+            logger.info("No prompt.md found, using default neutral prompt")
+            print("\n📝 NOTE: Using default neutral letter-writing prompt.")
+            if os.path.exists(example_file):
+                print(f"   To customize the AI's writing style:")
+                print(f"   1. Copy the example: cp {example_file} {prompt_file}")
+                print(f"   2. Edit {prompt_file} to match your political views and style")
+            print()
+            return default_prompt
+
+        # Load custom prompt
         try:
-            if os.path.exists(prompt_file):
-                with open(prompt_file, 'r', encoding='utf-8') as f:
-                    custom_prompt = f.read()
-                    if custom_prompt.strip():
-                        logger.info(f"Loaded custom system prompt from {prompt_file}")
-                        return custom_prompt
+            with open(prompt_file, 'r', encoding='utf-8') as f:
+                custom_prompt = f.read()
+                if custom_prompt.strip():
+                    logger.info(f"Loaded custom system prompt from {prompt_file}")
+                    return custom_prompt
+                else:
+                    logger.warning("prompt.md is empty, using default")
+                    return default_prompt
         except Exception as e:
             logger.warning(f"Could not load custom prompt: {e}")
-
-        return default_prompt
+            return default_prompt
 
     def analyze_articles(self, articles: List[Dict[str, str]]) -> str:
         """Analyze articles and extract key points"""
@@ -601,49 +625,61 @@ class MailerJSONGenerator:
         self.current_recipient = None
 
     def _load_return_address(self) -> Dict:
-        """Load return address from sender.json or environment variables"""
+        """Load return address from sender.json"""
         sender_file = 'sender.json'
+        example_file = 'sender.json.example'
 
-        # Try loading from sender.json first
-        if os.path.exists(sender_file):
-            try:
-                with open(sender_file, 'r', encoding='utf-8') as f:
-                    sender_data = json.load(f)
-                    logger.info(f"Loaded sender information from {sender_file}")
-                    # Extract just the address fields we need
-                    return {
-                        'name': sender_data.get('name', 'Brian West'),
-                        'street_1': sender_data.get('street_1', '714 E Osage Ave'),
-                        'street_2': sender_data.get('street_2', ''),
-                        'city': sender_data.get('city', 'McAlester'),
-                        'state': sender_data.get('state', 'OK'),
-                        'zip': sender_data.get('zip', '74501-6638'),
-                        'phone': sender_data.get('phone', '(918) 424-9378'),
-                        'email': sender_data.get('email', 'brian@mcalester.net'),
-                        'title': sender_data.get('title', '')
-                    }
-            except Exception as e:
-                logger.warning(f"Could not load sender.json: {e}, falling back to environment variables")
+        # Check if sender.json exists
+        if not os.path.exists(sender_file):
+            print("\n❌ ERROR: sender.json not found!")
+            print("   Please create sender.json with your information.")
+            if os.path.exists(example_file):
+                print(f"\n   To get started:")
+                print(f"   1. Copy the example file: cp {example_file} {sender_file}")
+                print(f"   2. Edit {sender_file} with your actual information")
+            else:
+                print("\n   Create sender.json with your name, address, and contact info.")
+                print("   See README.md for the required format.")
+            sys.exit(1)
 
-        # Fallback to environment variables
-        return {
-            'name': os.getenv('RETURN_NAME', 'Brian West'),
-            'street_1': os.getenv('RETURN_STREET', '714 E Osage Ave'),
-            'street_2': os.getenv('RETURN_STREET2', ''),
-            'city': os.getenv('RETURN_CITY', 'McAlester'),
-            'state': os.getenv('RETURN_STATE', 'OK'),
-            'zip': os.getenv('RETURN_ZIP', '74501-6638'),
-            'phone': os.getenv('RETURN_PHONE', '(918) 424-9378'),
-            'email': os.getenv('RETURN_EMAIL', 'brian@mcalester.net')
-        }
+        # Load from sender.json
+        try:
+            with open(sender_file, 'r', encoding='utf-8') as f:
+                sender_data = json.load(f)
+                logger.info(f"Loaded sender information from {sender_file}")
+
+                # Check if it's still the example data
+                if sender_data.get('email', '').endswith('@example.com'):
+                    print("\n⚠️  WARNING: sender.json still contains example data!")
+                    print("   Please update it with your actual information.")
+                    response = input("\n   Continue anyway? (y/n): ").strip().lower()
+                    if response != 'y':
+                        sys.exit(1)
+
+                # Extract address fields
+                return {
+                    'name': sender_data.get('name'),
+                    'street_1': sender_data.get('street_1'),
+                    'street_2': sender_data.get('street_2', ''),
+                    'city': sender_data.get('city'),
+                    'state': sender_data.get('state'),
+                    'zip': sender_data.get('zip'),
+                    'phone': sender_data.get('phone', ''),
+                    'email': sender_data.get('email', ''),
+                    'title': sender_data.get('title', '')
+                }
+        except Exception as e:
+            logger.error(f"Error loading sender.json: {e}")
+            print(f"\n❌ ERROR: Failed to load sender.json: {e}")
+            print("   Please check that sender.json is valid JSON.")
+            sys.exit(1)
 
     def _load_recipients(self) -> List[Dict]:
         """Load recipients from JSON file"""
         recipients = []
         json_file = 'recipients.json'
-        csv_file = 'recipients_export.csv'  # Fallback
 
-        # Try JSON first
+        # Load from JSON
         if os.path.exists(json_file):
             try:
                 with open(json_file, 'r', encoding='utf-8') as f:
@@ -772,81 +808,15 @@ class MailerJSONGenerator:
                     return recipients
 
             except Exception as e:
-                logger.warning(f"Error loading JSON file: {e}, trying CSV fallback")
+                logger.error(f"Error loading JSON file: {e}")
 
-        # Fallback to CSV if JSON not found or failed
-        if os.path.exists(csv_file):
-            logger.info("Using CSV fallback for recipients")
-            try:
-                with open(csv_file, 'r', encoding='utf-8') as f:
-                    reader = csv.DictReader(f)
-                    for idx, row in enumerate(reader):
-                        full_name = row.get('name_text', '').strip()
-
-                        # Simple parsing for CSV fallback
-                        if 'Governor' in full_name:
-                            office_type = 'governor'
-                            title = 'Governor of Oklahoma'
-                            organization = 'Office of the Governor'
-                        elif 'Senator' in full_name and ('Lankford' in full_name or 'Mullin' in full_name):
-                            office_type = 'federal_senate'
-                            title = 'United States Senator'
-                            organization = 'United States Senate'
-                        elif 'Congressman' in full_name or 'Congresswoman' in full_name:
-                            office_type = 'federal_house'
-                            title = 'United States Representative'
-                            organization = 'United States House of Representatives'
-                        elif 'Senator' in full_name:
-                            office_type = 'state_senate'
-                            title = 'State Senator'
-                            organization = 'Oklahoma State Senate'
-                        elif 'Representative' in full_name:
-                            office_type = 'state_house'
-                            title = 'State Representative'
-                            organization = 'Oklahoma House of Representatives'
-                        else:
-                            office_type = 'unknown'
-                            title = ''
-                            organization = ''
-
-                        name = full_name.replace('Governor ', '').replace('Senator ', '').replace('Representative ', '').replace('Congressman ', '')
-
-                        recipients.append({
-                            'id': idx,
-                            'full_name': full_name,
-                            'name': name,
-                            'title': title,
-                            'honorific': 'The Honorable',
-                            'organization': organization,
-                            'street_1': row.get('address1_text', ''),
-                            'street_2': '',
-                            'city': row.get('City', 'Oklahoma City'),
-                            'state': row.get('state_text', 'OK'),
-                            'zip': row.get('zip_text', ''),
-                            'office_type': office_type
-                        })
-
-            except Exception as e:
-                logger.error(f"Error loading CSV file: {e}")
-
-        # Final fallback
+        # Error if no recipients loaded
         if not recipients:
-            logger.warning("No recipients file found, using default")
-            return [{
-                'id': 'mullin_dc',
-                'full_name': 'Senator Markwayne Mullin',
-                'name': 'Markwayne Mullin',
-                'title': 'United States Senator',
-                'honorific': 'The Honorable',
-                'organization': 'United States Senate',
-                'street_1': '316 Hart Senate Office Building',
-                'street_2': '',
-                'city': 'Washington',
-                'state': 'DC',
-                'zip': '20510',
-                'office_type': 'federal_senate',
-                'office_location': 'dc'
-            }]
+            logger.error("No recipients loaded. Please ensure recipients.json exists and is valid.")
+            print("\n❌ ERROR: recipients.json file not found or invalid!")
+            print("   Please ensure recipients.json exists in the current directory.")
+            print("   See README.md for the expected format.")
+            sys.exit(1)
 
         return recipients
 
@@ -1167,40 +1137,44 @@ class InteractiveMailerSystem:
         self.editor = self._detect_editor()
 
     def _load_config(self) -> Dict:
-        """Load configuration from sender.json or defaults"""
+        """Load configuration from sender.json"""
         sender_file = 'sender.json'
+        example_file = 'sender.json.example'
 
-        # Default configuration
-        config = {
-            'first_name': 'Brian',
-            'last_name': 'West',
-            'street_address': '714 E Osage Ave',
-            'city': 'McAlester',
-            'state': 'OK',
-            'zip_code': '74501-6638',
-            'phone': '(918) 424-9378',
-            'email': 'brian@mcalester.net',
-            'openai_model': os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview'),
-        }
+        # Check if sender.json exists
+        if not os.path.exists(sender_file):
+            print("\n❌ ERROR: sender.json not found!")
+            print("   Please create sender.json with your information.")
+            if os.path.exists(example_file):
+                print(f"\n   To get started:")
+                print(f"   1. Copy the example file: cp {example_file} {sender_file}")
+                print(f"   2. Edit {sender_file} with your actual information")
+            else:
+                print("\n   Create sender.json with your name, address, and contact info.")
+                print("   See README.md for the required format.")
+            sys.exit(1)
 
-        # Try loading from sender.json
-        if os.path.exists(sender_file):
-            try:
-                with open(sender_file, 'r', encoding='utf-8') as f:
-                    sender_data = json.load(f)
-                    # Update config with sender data
-                    config.update({
-                        'first_name': sender_data.get('first_name', 'Brian'),
-                        'last_name': sender_data.get('last_name', 'West'),
-                        'street_address': sender_data.get('street_1', '714 E Osage Ave'),
-                        'city': sender_data.get('city', 'McAlester'),
-                        'state': sender_data.get('state', 'OK'),
-                        'zip_code': sender_data.get('zip', '74501-6638'),
-                        'phone': sender_data.get('phone', '(918) 424-9378'),
-                        'email': sender_data.get('email', 'brian@mcalester.net'),
-                    })
-            except Exception as e:
-                logger.warning(f"Could not load sender config from sender.json: {e}")
+        # Load configuration from sender.json
+        try:
+            with open(sender_file, 'r', encoding='utf-8') as f:
+                sender_data = json.load(f)
+                config = {
+                    'first_name': sender_data.get('first_name'),
+                    'last_name': sender_data.get('last_name'),
+                    'street_address': sender_data.get('street_1'),
+                    'city': sender_data.get('city'),
+                    'state': sender_data.get('state'),
+                    'zip_code': sender_data.get('zip'),
+                    'phone': sender_data.get('phone', ''),
+                    'email': sender_data.get('email', ''),
+                    'openai_model': os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview'),
+                }
+                logger.info("Loaded sender configuration from sender.json")
+        except Exception as e:
+            logger.error(f"Error loading sender.json: {e}")
+            print(f"\n❌ ERROR: Failed to load sender.json: {e}")
+            print("   Please check that sender.json is valid JSON.")
+            sys.exit(1)
 
         return config
 

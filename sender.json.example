@@ -1,0 +1,20 @@
+{
+  "name": "John Doe",
+  "first_name": "John",
+  "last_name": "Doe",
+  "street_1": "123 Main Street",
+  "street_2": "",
+  "city": "Oklahoma City",
+  "state": "OK",
+  "zip": "73101-0001",
+  "phone": "(405) 555-0100",
+  "email": "john.doe@example.com",
+  "title": "",
+  "prefix": "Mr.",
+  "political_affiliation": "Concerned Citizen",
+  "metadata": {
+    "note": "IMPORTANT: Edit this file with YOUR actual information before using the system",
+    "last_updated": "2025-10-24",
+    "warning": "This is example data only - please update with your real information"
+  }
+}
